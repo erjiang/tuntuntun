@@ -7,11 +7,9 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
+#include "readpacket.h"
+
 #define BUF_SIZE (2048)
-
-void print_bytes(char*, ssize_t);
-
-int tun_alloc(char*, int);
 
 int main(int argc, char **argv) {
     char readbuf[BUF_SIZE];
@@ -29,6 +27,12 @@ int main(int argc, char **argv) {
         ssize_t b = read(my_tun, readbuf, sizeof readbuf);
         print_bytes(readbuf, b);
     }
+}
+
+char* alloc_tun_name() {
+    char *nam = malloc(IFNAMSIZ);
+    bzero(nam, IFNAMSIZ);
+    return nam;
 }
 
 void print_bytes(char *bytes, ssize_t n) {
