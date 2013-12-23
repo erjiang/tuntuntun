@@ -11,7 +11,8 @@
 
 #define BUF_SIZE (2048)
 
-int main(int argc, char **argv) {
+// original main function for testing
+int old_main(int argc, char **argv) {
     char readbuf[BUF_SIZE];
     char tun_name[IFNAMSIZ];
     strcpy(tun_name, "tun0");
