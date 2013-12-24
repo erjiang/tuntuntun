@@ -1,4 +1,0 @@
-make
-sudo ./readpacket
-sudo ifconfig tun0 192.168.7.1 pointopoint 192.168.7.2 up
-ping -c 1 192.168.7.2
