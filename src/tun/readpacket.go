@@ -20,7 +20,7 @@ func Tun_alloc(flags int) (*os.File, error) {
 	fd := C.tun_alloc(devname, C.int(flags))
 	if fd < 0 {
 		return nil, errors.New(fmt.Sprintf(
-			"Error trying to create tun device. Got error code %ld. Do you have permission to create a tun device?", fd))
+			"Error trying to create tun device. Got error code %d. Do you have permission to create a tun device?", int(fd)))
 	}
 	godevname := C.GoString(devname)
 	C.free(unsafe.Pointer(devname))
