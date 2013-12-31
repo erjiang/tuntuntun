@@ -49,7 +49,8 @@ func client(remote_addr *net.UDPAddr) {
 		if err != nil {
 			log.Print(err)
 		} else {
-			log.Printf("Got a packet of %d bytes", count)
+			log.Printf("Got a packet of %d bytes for %s", count,
+				get_ip_dest(data[:count]))
 			log.Printf("Sending to " + remote_addr.String())
 			forward_packet(conn, remote_addr, data[:count])
 		}

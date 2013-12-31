@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net"
 )
 
@@ -34,6 +35,32 @@ func parse_envelope(raw []byte) Envelope {
 		sequence: uint64((raw[0])<<3) + uint64((raw[1])<<2) + uint64((raw[2])<<1) + uint64(raw[3]),
 		packet:   raw[ENVELOPE_LENGTH:],
 	}
+}
+
+// returns 4 for IPv4, 6 for IPv6
+func get_ip_version(pkt []byte) byte {
+	// get first 4 bits
+	return (pkt[0] & 0xF0) / 0x10
+}
+
+func get_ip_dest(pkt []byte) net.IP {
+	switch get_ip_version(pkt) {
+	case 4:
+		return net.IP(pkt[12:16])
+	default:
+		log.Printf("IPv%d packets not supported", get_ip_version(pkt))
+	}
+	return net.IP{0, 0, 0, 0}
+}
+
+func get_ip_src(pkt []byte) net.IP {
+	switch get_ip_version(pkt) {
+	case 4:
+		return net.IP(pkt[16:20])
+	default:
+		log.Printf("IPv%d packets not supported", get_ip_version(pkt))
+	}
+	return net.IP{0, 0, 0, 0}
 }
 
 /*
