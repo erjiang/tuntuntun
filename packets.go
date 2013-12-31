@@ -43,7 +43,7 @@ func get_ip_version(pkt []byte) byte {
 	return (pkt[0] & 0xF0) / 0x10
 }
 
-func get_ip_dest(pkt []byte) net.IP {
+func get_ip_src(pkt []byte) net.IP {
 	switch get_ip_version(pkt) {
 	case 4:
 		return net.IP(pkt[12:16])
@@ -53,7 +53,7 @@ func get_ip_dest(pkt []byte) net.IP {
 	return net.IP{0, 0, 0, 0}
 }
 
-func get_ip_src(pkt []byte) net.IP {
+func get_ip_dest(pkt []byte) net.IP {
 	switch get_ip_version(pkt) {
 	case 4:
 		return net.IP(pkt[16:20])
