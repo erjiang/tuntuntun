@@ -32,7 +32,8 @@ func replace_sender_ip(pkt []byte, new_ip net.IP) []byte {
 func parse_envelope(raw []byte) Envelope {
 	return Envelope{
 		env_type: raw[0],
-		sequence: uint64((raw[0])<<3) + uint64((raw[1])<<2) + uint64((raw[2])<<1) + uint64(raw[3]),
+		// TODO: replace with encoding/binary
+		sequence: uint64((raw[0])<<24) + uint64((raw[1])<<16) + uint64((raw[2])<<8) + uint64(raw[3]),
 		packet:   raw[ENVELOPE_LENGTH:],
 	}
 }
@@ -81,6 +82,23 @@ func clear_checksum(pkt []byte) {
 	default:
 		log.Printf("IPv%d packets not supported", get_ip_version(pkt))
 	}
+}
+
+func calculateIPHeaderChecksum(pkt []byte) uint16 {
+	// loop through the 10 16-bit values
+	var sum uint32 = 0
+	for i := 0; i < 10; i++ {
+		if i == 5 {
+			continue
+		}
+		// sum up each 16-bit value
+		sum = sum + (uint32(pkt[i*2]) << 8) + uint32(pkt[i*2+1])
+	}
+
+	// carry over first bits beyond lower 16
+	var checksum uint16 = uint16(sum) + uint16(sum>>16)
+	checksum = ^checksum
+	return checksum
 }
 
 func get_ip_proto(pkt []byte) byte {
