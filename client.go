@@ -15,10 +15,6 @@ const MY_IP string = "192.168.7.1"
 const IFCONFIG string = "ifconfig tun0 192.168.7.1 pointopoint 192.168.7.2 up"
 const REMOTE_IP string = "192.168.7.2"
 
-const TUNTUNTUN_CLIENT_PORT int = 70
-
-const BUF_SIZE uint = 2048
-
 var send_buf []byte = make([]byte, BUF_SIZE)
 
 func client(remote_addr *net.UDPAddr) {
