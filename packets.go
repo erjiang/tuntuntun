@@ -63,11 +63,25 @@ func get_ip_dest(pkt []byte) net.IP {
 	return net.IP{0, 0, 0, 0}
 }
 
-/*
-func replace_sender_port(pkt []byte) {
-
+func replace_src_addr(pkt []byte, new_ip net.IP) {
+	switch get_ip_version(pkt) {
+	case 4:
+		copy(pkt[12:], new_ip.To4()[0:4])
+	default:
+		log.Printf("IPv%d packets not supported", get_ip_version(pkt))
+	}
 }
-*/
+
+// zero out the IP header checksum
+func clear_checksum(pkt []byte) {
+	switch get_ip_version(pkt) {
+	case 4:
+		pkt[10] = 0
+		pkt[11] = 0
+	default:
+		log.Printf("IPv%d packets not supported", get_ip_version(pkt))
+	}
+}
 
 func get_ip_proto(pkt []byte) byte {
 	return pkt[9]
