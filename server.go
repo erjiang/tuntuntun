@@ -11,10 +11,13 @@ var read_buf []byte = make([]byte, BUF_SIZE)
 
 func server() {
 
+	ext_ip := &net.IP{192, 168, 8, 1}
+	/*
 	ext_ip, err := get_ext_addr()
 	if err != nil {
 		log.Fatal(err)
 	}
+	*/
 	log.Print("External IP is ", ext_ip.String())
 
 	log.Print("Initializing tun device")
