@@ -84,6 +84,13 @@ func clear_checksum(pkt []byte) {
 	}
 }
 
+// replace a packet's checksum with a newly calculated sum
+func ReplaceIPHeaderChecksum(pkt []byte) {
+	checksum := calculateIPHeaderChecksum(pkt)
+	pkt[10] = byte(checksum >> 8)
+	pkt[11] = byte(checksum)
+}
+
 func calculateIPHeaderChecksum(pkt []byte) uint16 {
 	// loop through the 10 16-bit values
 	var sum uint32 = 0

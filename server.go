@@ -45,7 +45,7 @@ func server() {
 
 		log.Printf("Sending through tun device")
 		replace_src_addr(pkt, *ext_ip)
-		clear_checksum(pkt)
+		ReplaceIPHeaderChecksum(pkt)
 		tun.Write(read_buf[ENVELOPE_LENGTH:count])
 	}
 }
