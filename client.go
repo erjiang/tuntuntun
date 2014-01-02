@@ -5,26 +5,21 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os/exec"
 	"tun"
 )
 
 var packet_seq uint64 = 0
 
-const MY_IP string = "192.168.7.1"
-const IFCONFIG string = "ifconfig tun0 192.168.7.1 pointopoint 192.168.7.2 up"
-const REMOTE_IP string = "192.168.7.2"
-
 var send_buf []byte = make([]byte, BUF_SIZE)
 
 func client(remote_addr *net.UDPAddr) {
 	log.Print("Initializing tun device")
-	tun, err := tun.Tun_alloc(tun.IFF_TUN | tun.IFF_NO_PI)
+	tundev, err := tun.Tun_alloc(tun.IFF_TUN | tun.IFF_NO_PI)
 	if err != nil {
 		log.Print("Could not allocate tun device")
 		log.Fatal(err)
 	}
-	log.Print("Opened up tun device " + tun.Name())
+	log.Print("Opened up tun device " + tundev.Name())
 
 	log.Print("Initializing UDP connection to " + remote_addr.String())
 
@@ -34,23 +29,47 @@ func client(remote_addr *net.UDPAddr) {
 	}
 
 	log.Print("Configuring device with ifconfig")
-	err = ifconfig_tun(tun.Name(), MY_IP, REMOTE_IP)
+	err = tun.Ifconfig(tundev.Name(), TTT_CLIENT_IP, TTT_SERVER_IP)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	log.Print("Ready ...")
 
-	data := make([]byte, BUF_SIZE)
+	tun_read_buf := make([]byte, BUF_SIZE)
+	udp_read_buf := make([]byte, BUF_SIZE)
+
+	// set up listening channels for udp and tun
+	tunchan := make(chan int)
+	udpchan := make(chan UDPRecv)
+
+	go listenTun(tundev, tun_read_buf, tunchan)
+	go listenUDP(conn, udp_read_buf, udpchan)
+
 	for {
-		count, err := tun.Read(data)
-		if err != nil {
-			log.Print(err)
-		} else {
+		select {
+		case count, ok := <-tunchan:
+			if !ok {
+				log.Fatal("Error reading from tun")
+			}
 			log.Printf("Got a packet of %d bytes for %s", count,
-				get_ip_dest(data[:count]))
+				get_ip_dest(tun_read_buf[:count]))
 			log.Printf("Sending to " + remote_addr.String())
-			forward_packet(conn, remote_addr, data[:count])
+			forward_packet(conn, remote_addr, tun_read_buf[:count])
+		case udpr, ok := <-udpchan:
+			if !ok {
+				log.Fatal("Error reading from udp")
+			}
+			count := udpr.Count
+			remote_addr := udpr.RemoteAddr
+			log.Print("Got packet of len %d from %s", count, remote_addr)
+			switch udp_read_buf[0] {
+			case 1: // packet to be forwarded
+				pkt := udp_read_buf[ENVELOPE_LENGTH:count]
+				tundev.Write(pkt)
+			default:
+				log.Print("Received packet of type ", udp_read_buf[0])
+			}
 		}
 	}
 }
@@ -79,10 +98,4 @@ func forward_packet(conn *net.UDPConn, remote_addr *net.UDPAddr, pkt []byte) err
 	}
 
 	return nil
-}
-
-func ifconfig_tun(name, my_ip, remote_ip string) error {
-	cmd := exec.Command("ifconfig", name, my_ip, "pointopoint", remote_ip, "up")
-
-	return cmd.Run()
 }

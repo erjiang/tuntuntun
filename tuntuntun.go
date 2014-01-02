@@ -8,6 +8,8 @@ import (
 )
 
 const TUNTUNTUN_CLIENT_PORT int = 70
+const TTT_CLIENT_IP string = "192.168.7.1"
+const TTT_SERVER_IP string = "192.168.7.2"
 const TUNTUNTUN_SERVER_PORT int = 71
 
 const BUF_SIZE uint = 2048
