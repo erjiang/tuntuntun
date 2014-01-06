@@ -26,3 +26,22 @@ Milestones
 3. Auto-configure routing to route all network traffic through the tun device.
 4. Handle retransmission, ordering, etc. (Effectively reimplementing TCP.)
 5. Load-balance connection across multiple physical connections.
+
+
+Questions and Answers
+---------------------
+
+1. Q: Why not just use OpenVPN + ifenslave to bond two interfaces?
+
+A: Putting more of the load-balancing logic into this software makes it easier
+to experiment with different load-balancing and/or failover strategies. For
+example, you can modify the code to send 75% of packets over one link, and the
+rest on another link, or do instant failover when one link's latency exceeds a
+certain threshold.
+
+2. Q: How does this compare to programs that don't require a proxy server?
+
+A: Many connection-sharing/load-balancing programs operate by assigning
+different connections to different links. For example, if you are downloading
+two files, each file can be downloaded over a different link. The advantage is
+that no outside proxy server is needed. But, in this strategy, it's not possible to speed up one connection using multiple links.
