@@ -37,3 +37,38 @@ func TestPacketAdd(t *testing.T) {
 
 }
 
+func TestQueueCapacity(t *testing.T) {
+    pq := PacketQueue{}
+    for i := 0; i < PACKET_BUFFER_SIZE; i++ {
+        serial, err := pq.Add([]byte{0, 0, byte(i)})
+        if err != nil {
+            t.Error(err)
+        }
+        if serial != uint64(i) {
+            t.Errorf("Serial %d did not match %d", serial, i)
+        }
+    }
+
+    _, err := pq.Add([]byte{0})
+    if err == nil {
+        t.Errorf("Queue did not error when adding past capacity")
+    }
+
+    const trimNum uint64 = 5
+    pq.TrimUpTo(trimNum)
+
+    for i := 0; uint64(i) < trimNum; i++ {
+        serial, err := pq.Add([]byte{1, byte(i)})
+        if err != nil {
+            t.Error(err)
+        }
+        if serial != uint64(PACKET_BUFFER_SIZE + i) {
+            t.Errorf("Serial %d did not match %d", serial, i)
+        }
+    }
+
+    _, err = pq.Add([]byte{0})
+    if err == nil {
+        t.Errorf("Queue did not error when adding past capacity")
+    }
+}
