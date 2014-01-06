@@ -10,6 +10,7 @@ import (
 var other_end *net.UDPAddr
 
 func register_connection(ra *net.UDPAddr) {
+    log.Print("Got registration from ", ra)
 	other_end = ra
 }
 
