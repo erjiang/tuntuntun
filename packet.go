@@ -19,6 +19,14 @@ const IP4_ICMP byte = 1
 const IP4_UDP byte = 17
 const IP4_TCP byte = 6
 
+const TTT_DATA byte = 1
+const TTT_RESEND_REQ byte = 2
+const TTT_ACK byte = 3
+
+const TTT_REGISTER byte = 4
+const TTT_REGISTER_REQ byte = 5
+const TTT_REGISTER_ACK byte = 6
+
 const ENVELOPE_LENGTH int = 5 // 5 byte envelope
 
 func replace_sender_ip(pkt []byte, new_ip net.IP) []byte {

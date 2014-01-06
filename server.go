@@ -7,6 +7,12 @@ import (
 	"tun"
 )
 
+var other_end *net.UDPAddr
+
+func register_connection(ra *net.UDPAddr) {
+	other_end = ra
+}
+
 func server() {
 	tun_ip := &net.IP{192, 168, 7, 2}
 	log.Print("External IP is ", tun_ip.String())
@@ -49,7 +55,11 @@ func server() {
 				log.Fatal("Error reading from tun")
 			}
 			log.Printf("Got %d bytes from tundev", tlen)
-			log.Print("[FIXME] send data to client")
+			if other_end != nil {
+				forward_packet(conn, other_end, tun_read_buf[:tlen])
+			} else {
+				log.Print("Got data without registration")
+			}
 		// listenUDP sends a struct with byte count and remote_addr
 		case udpr, ok := <-udpchan:
 			if !ok {
@@ -58,7 +68,7 @@ func server() {
 			count := udpr.Count
 			remote_addr := udpr.RemoteAddr
 			switch udp_read_buf[0] {
-			case 1: // packet to be forwarded
+			case TTT_DATA: // packet to be forwarded
 				pkt := udp_read_buf[ENVELOPE_LENGTH:count]
 
 				log.Printf("Got %d bytes from %s addressed to %s",
@@ -71,8 +81,9 @@ func server() {
 				ReplaceIPHeaderChecksum(pkt)
 				*/
 				tundev.Write(udp_read_buf[ENVELOPE_LENGTH:count])
-			case 2: // registration
+			case TTT_REGISTER: // registration
 				log.Print("Received registration from ", remote_addr)
+				register_connection(remote_addr)
 			default:
 				log.Print("Received packet of type ", udp_read_buf[0])
 			}

@@ -55,6 +55,7 @@ func client(remote_addr *net.UDPAddr) {
 			log.Printf("Got a packet of %d bytes for %s", count,
 				get_ip_dest(tun_read_buf[:count]))
 			log.Printf("Sending to " + remote_addr.String())
+			// pass along packet
 			forward_packet(conn, remote_addr, tun_read_buf[:count])
 		case udpr, ok := <-udpchan:
 			if !ok {
@@ -64,14 +65,22 @@ func client(remote_addr *net.UDPAddr) {
 			remote_addr := udpr.RemoteAddr
 			log.Print("Got packet of len %d from %s", count, remote_addr)
 			switch udp_read_buf[0] {
-			case 1: // packet to be forwarded
+			case TTT_DATA: // packet to be forwarded
 				pkt := udp_read_buf[ENVELOPE_LENGTH:count]
+				// pass along packet
 				tundev.Write(pkt)
 			default:
 				log.Print("Received packet of type ", udp_read_buf[0])
 			}
 		}
 	}
+}
+
+func register(conn *net.UDPConn, remote_addr *net.UDPAddr) error {
+    registration := []byte{TTT_REGISTER}
+    _, err := conn.WriteToUDP(registration, remote_addr)
+    // TODO: wait for registration acknownledgment
+    return err
 }
 
 func forward_packet(conn *net.UDPConn, remote_addr *net.UDPAddr, pkt []byte) error {
