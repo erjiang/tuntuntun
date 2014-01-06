@@ -28,6 +28,9 @@ func client(remote_addr *net.UDPAddr) {
 		log.Fatal(err)
 	}
 
+	log.Print("Registering with server...")
+	registerClient(conn, remote_addr)
+
 	log.Print("Configuring device with ifconfig")
 	err = tun.Ifconfig(tundev.Name(), TTT_CLIENT_IP, TTT_SERVER_IP)
 	if err != nil {
@@ -63,7 +66,7 @@ func client(remote_addr *net.UDPAddr) {
 			}
 			count := udpr.Count
 			remote_addr := udpr.RemoteAddr
-			log.Print("Got packet of len %d from %s", count, remote_addr)
+			log.Printf("Got packet of len %d from %s", count, remote_addr)
 			switch udp_read_buf[0] {
 			case TTT_DATA: // packet to be forwarded
 				pkt := udp_read_buf[ENVELOPE_LENGTH:count]
@@ -76,11 +79,11 @@ func client(remote_addr *net.UDPAddr) {
 	}
 }
 
-func register(conn *net.UDPConn, remote_addr *net.UDPAddr) error {
-    registration := []byte{TTT_REGISTER}
-    _, err := conn.WriteToUDP(registration, remote_addr)
-    // TODO: wait for registration acknownledgment
-    return err
+func registerClient(conn *net.UDPConn, remote_addr *net.UDPAddr) error {
+	registration := []byte{TTT_REGISTER}
+	_, err := conn.WriteToUDP(registration, remote_addr)
+	// TODO: wait for registration acknownledgment
+	return err
 }
 
 func forward_packet(conn *net.UDPConn, remote_addr *net.UDPAddr, pkt []byte) error {

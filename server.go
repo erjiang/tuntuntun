@@ -10,7 +10,7 @@ import (
 var other_end *net.UDPAddr
 
 func register_connection(ra *net.UDPAddr) {
-    log.Print("Got registration from ", ra)
+	log.Print("Got registration from ", ra)
 	other_end = ra
 }
 
@@ -57,6 +57,7 @@ func server() {
 			}
 			log.Printf("Got %d bytes from tundev", tlen)
 			if other_end != nil {
+				log.Printf("Sending %d bytes to client", tlen)
 				forward_packet(conn, other_end, tun_read_buf[:tlen])
 			} else {
 				log.Print("Got data without registration")
