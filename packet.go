@@ -27,6 +27,9 @@ const TTT_REGISTER byte = 4
 const TTT_REGISTER_REQ byte = 5
 const TTT_REGISTER_ACK byte = 6
 
+const TTT_PING_REQ byte = 7
+const TTT_PING_ACK byte = 8
+
 const ENVELOPE_LENGTH int = 5 // 5 byte envelope
 
 func replace_sender_ip(pkt []byte, new_ip net.IP) []byte {
