@@ -57,7 +57,7 @@ func server() {
 			}
 			log.Printf("Got %d bytes from tundev", tlen)
 			if other_end != nil {
-				log.Printf("Sending %d bytes to client", tlen)
+				log.Printf("Sending %d bytes to %s", tlen, other_end)
 				forward_packet(conn, other_end, tun_read_buf[:tlen])
 			} else {
 				log.Print("Got data without registration")
