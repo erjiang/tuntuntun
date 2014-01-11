@@ -7,7 +7,7 @@ import (
 )
 
 type UDPRecv struct {
-	Count int
+	Count      int
 	RemoteAddr *net.UDPAddr
 }
 
@@ -19,7 +19,7 @@ func listenUDP(conn *net.UDPConn, read_buf []byte, c chan UDPRecv) error {
 			return err
 		}
 		c <- UDPRecv{
-			Count: count,
+			Count:      count,
 			RemoteAddr: remote_addr,
 		}
 	}

@@ -36,12 +36,31 @@ func main() {
 			return
 		}
 
+		var local_ifs = make([]*net.UDPAddr, len(os.Args[3:]))
+		for i, addr := range os.Args[3:] {
+			local_ifs[i], err = net.ResolveUDPAddr("udp", addr)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 		remote_addr, err := net.ResolveUDPAddr("udp", os.Args[2])
 		if err != nil {
 			log.Fatal(err)
 		}
-		client(remote_addr)
+		client(remote_addr, local_ifs)
 	} else {
 		server()
+	}
+}
+
+func debug(lvl int, msg ...interface{}) {
+	if DEBUG_LEVEL >= lvl {
+		log.Print(msg...)
+	}
+}
+
+func debugf(lvl int, format string, stuff ...interface{}) {
+	if DEBUG_LEVEL >= lvl {
+		log.Printf(format, stuff...)
 	}
 }

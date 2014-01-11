@@ -25,11 +25,16 @@ const (
 )
 
 type Iface struct {
-	Name    string
-	IP      *net.UDPAddr
-	Status  IfaceStatus
-	LastRTT time.Duration
-	monitor chan IfaceStatus
+	Name         string
+	IP           *net.UDPAddr
+	Conn         *net.UDPConn
+	Status       IfaceStatus
+	LastRTT      time.Duration
+	monitor      chan IfaceStatus
+	packets_sent uint64
+	packets_recv uint64 // not currently working
+	bytes_sent   uint64
+	bytes_recv   uint64 // not currently working
 }
 
 // function to repeatedly ping a host to monitor its response time
