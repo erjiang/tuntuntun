@@ -26,17 +26,11 @@ func client(remote_addr *net.UDPAddr, local_ifs []*net.UDPAddr) {
 
 	log.Print("Initializing UDP connection to " + remote_addr.String())
 
-	// TODO: listen on each iface separately to track where packets come from
-	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: TUNTUNTUN_CLIENT_PORT})
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// create list of local Ifs and store in global
 	ifs = setupIfs(local_ifs)
 
-	log.Print("Registering with server...")
 	for _, iface := range ifs {
+		log.Printf("Registering %s with server...", iface.Conn.LocalAddr())
 		registerClient(iface.Conn, remote_addr)
 	}
 
@@ -57,7 +51,9 @@ func client(remote_addr *net.UDPAddr, local_ifs []*net.UDPAddr) {
 	fwdchan := make(chan []byte)
 
 	go listenTun(tundev, tun_read_buf, tunchan)
-	go listenUDP(conn, udp_read_buf, udpchan)
+	for _, iface := range ifs {
+		go listenUDP(iface.Conn, udpchan)
+	}
 	// put packet forwarding in a separate goroutine to be able to do
 	// round-robin load-balancing and more
 	go forwardPacketHandler(remote_addr, fwdchan)
@@ -77,16 +73,16 @@ func client(remote_addr *net.UDPAddr, local_ifs []*net.UDPAddr) {
 			if !ok {
 				log.Fatal("Error reading from udp")
 			}
-			count := udpr.Count
+			envelope := udpr.Data
 			remote_addr := udpr.RemoteAddr
-			log.Printf("Got packet of len %d from %s", count, remote_addr)
+			log.Printf("Got packet of len %d from %s", len(envelope), remote_addr)
 			switch udp_read_buf[0] {
 			case TTT_DATA: // packet to be forwarded
-				pkt := udp_read_buf[ENVELOPE_LENGTH:count]
+				pkt := envelope[ENVELOPE_LENGTH:]
 				// pass along packet
 				tundev.Write(pkt)
 			default:
-				log.Print("Received packet of type ", udp_read_buf[0])
+				log.Print("Received packet of type ", envelope[0])
 			}
 		}
 	}
@@ -96,6 +92,7 @@ func setupIfs(addrs []*net.UDPAddr) []*Iface {
 	var iflist = make([]*Iface, 0)
 	for i, v := range addrs {
 		// try listening on if
+		debug(1, "Listening on ", v)
 		conn, err := net.ListenUDP("udp", v)
 		if err != nil {
 			log.Print("Could not listen to ", v)

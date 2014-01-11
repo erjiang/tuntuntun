@@ -38,7 +38,7 @@ func main() {
 
 		var local_ifs = make([]*net.UDPAddr, len(os.Args[3:]))
 		for i, addr := range os.Args[3:] {
-			local_ifs[i], err = net.ResolveUDPAddr("udp", addr)
+			local_ifs[i], err = net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", addr, TUNTUNTUN_CLIENT_PORT))
 			if err != nil {
 				log.Fatal(err)
 			}

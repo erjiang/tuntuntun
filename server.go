@@ -38,7 +38,7 @@ func server() {
 		log.Fatal(err)
 	}
 
-	udp_read_buf := make([]byte, BUF_SIZE)
+	// TODO: put the buffer in the listenTun goroutine
 	tun_read_buf := make([]byte, BUF_SIZE)
 
 	// set up listening channels for udp and tun
@@ -46,7 +46,7 @@ func server() {
 	udpchan := make(chan UDPRecv)
 
 	go listenTun(tundev, tun_read_buf, tunchan)
-	go listenUDP(conn, udp_read_buf, udpchan)
+	go listenUDP(conn, udpchan)
 
 	for {
 		select {
@@ -67,14 +67,14 @@ func server() {
 			if !ok {
 				log.Fatal("Error reading from udp")
 			}
-			count := udpr.Count
+			envelope := udpr.Data
 			remote_addr := udpr.RemoteAddr
-			switch udp_read_buf[0] {
-			case TTT_DATA: // packet to be forwarded
-				pkt := udp_read_buf[ENVELOPE_LENGTH:count]
 
+			switch envelope[0] {
+			case TTT_DATA: // packet to be forwarded
+				pkt := envelope[ENVELOPE_LENGTH:]
 				log.Printf("Got %d bytes from %s addressed to %s",
-					count, remote_addr,
+					len(envelope), remote_addr,
 					get_ip_dest(pkt))
 
 				log.Printf("Sending through tun device")
@@ -82,12 +82,12 @@ func server() {
 				replace_src_addr(pkt, *tun_ip)
 				ReplaceIPHeaderChecksum(pkt)
 				*/
-				tundev.Write(udp_read_buf[ENVELOPE_LENGTH:count])
+				tundev.Write(pkt)
 			case TTT_REGISTER: // registration
 				log.Print("Received registration from ", remote_addr)
 				register_connection(remote_addr)
 			default:
-				log.Print("Received packet of type ", udp_read_buf[0])
+				log.Print("Received packet of type ", envelope[0])
 			}
 		}
 	}

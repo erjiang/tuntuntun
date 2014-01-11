@@ -7,11 +7,16 @@ import (
 )
 
 type UDPRecv struct {
-	Count      int
+	Data       []byte // UDP payload
 	RemoteAddr *net.UDPAddr
 }
 
-func listenUDP(conn *net.UDPConn, read_buf []byte, c chan UDPRecv) error {
+// listenUDP goroutine has its own internal read buf that it gives a slice into
+// when it receives a packet. It passes the slice and the source address into
+// the channel.
+// TODO: make this take an Iface so it can log statistics
+func listenUDP(conn *net.UDPConn, c chan UDPRecv) error {
+	read_buf := make([]byte, BUF_SIZE)
 	for {
 		count, remote_addr, err := conn.ReadFromUDP(read_buf)
 		if err != nil {
@@ -19,7 +24,7 @@ func listenUDP(conn *net.UDPConn, read_buf []byte, c chan UDPRecv) error {
 			return err
 		}
 		c <- UDPRecv{
-			Count:      count,
+			Data:       read_buf[:count],
 			RemoteAddr: remote_addr,
 		}
 	}
