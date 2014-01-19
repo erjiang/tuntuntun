@@ -27,24 +27,27 @@ func CreateDeviceBoundUDPSocket(addr *net.IP, port uint16, device string) (fd in
 // not thread safe
 func WriteToUDP(fd int, buf []byte, dest *net.UDPAddr) (int, error) {
     //fmt.Printf("WriteToUDP (go): fd=%d, buf len=%d, dest=%s\n", fd, len(buf), dest);
-	res := C.writeToUDP(C.int(fd), unsafe.Pointer(&buf[0]),
+	res, errno := C.writeToUDP(C.int(fd), unsafe.Pointer(&buf[0]),
 		C.size_t(len(buf)), C.uint32_t(ipToInt(&dest.IP)),
 		C.uint16_t(dest.Port))
 	if res < 0 {
-		return int(res), errors.New(fmt.Sprintf("Got error code %d from sendto", res))
+		return int(res), errors.New(fmt.Sprintf("Got errno %d from sendto", errno))
 	}
 	return int(res), nil
 }
 
 func ReadFromUDP(fd int, buf []byte) (int, *net.UDPAddr, error) {
-    fmt.Print("socks.ReadFromUDP\n");
     var port_buf C.uint16_t
     var ip_buf C.uint32_t
-    res := C.recvFromUDP(C.int(fd), unsafe.Pointer(&buf[0]),
+    /*
+    fmt.Printf("Calling recvFromUDP(%d, %p, %d, %p, %p)\n", C.int(fd), unsafe.Pointer(&buf[0]),
+        C.size_t(len(buf)), &ip_buf, &port_buf)
+    */
+    res, errno := C.recvFromUDP(C.int(fd), unsafe.Pointer(&buf[0]),
         C.size_t(len(buf)), &ip_buf, &port_buf)
 
     if res < 0 {
-        return int(res), nil, errors.New(fmt.Sprintf("Got error code %d from recvfrom", res))
+        return int(res), nil, errors.New(fmt.Sprintf("Got errno %d from recvfrom", errno))
     }
 
     fmt.Sprintf("Got something from fd %d", fd)

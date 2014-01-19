@@ -54,10 +54,12 @@ ssize_t writeToUDP(int fd, void *buf, size_t buflen, uint32_t dip, uint16_t dpor
 ssize_t recvFromUDP(int fd, void *buf, size_t buflen, uint32_t *from_ip_buf, uint16_t *from_port_buf) {
     // IPv6 support needs sockaddr_storage to then cast to in or in6
     struct sockaddr_in sa;
+    // why is it a pointer to a socklen_t?
+    socklen_t sa_len = sizeof sa;
 
-
-    ssize_t res = recvfrom(fd, buf, buflen, 0, &sa, sizeof(sa));
-    int * crash = NULL; if (res < 0) { *crash = 1; } // force crash
+    ssize_t res = recvfrom(fd, buf, buflen, 0, &sa, &sa_len);
+    //ssize_t res = recvfrom(fd, buf, buflen, 0, &sa, sizeof(sa));
+    //int * crash = NULL; if (res < 0) { *crash = errno; } // force crash
 
     // pass in src ip and port out of band
     *from_ip_buf = ntohl(sa.sin_addr.s_addr);
