@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"github.com/mgutz/ansi"
 	"log"
 	"net"
 	"os"
