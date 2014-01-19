@@ -25,7 +25,7 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 	}
 	debug(0, "Opened up tun device "+tundev.Name())
 
-	debug(0, "Initializing UDP connection to "+remote_addr.String())
+	debug(0, "Initializing interfaces...")
 	// create list of local Ifs and store in global
 	ifs = setupIfs(local_ifs)
 
