@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"socks"
+	"time"
 	"tun"
 )
 
@@ -103,7 +104,7 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 // 4. creates a tuntuntun Iface struct for that interface
 func setupIfs(ifs []string) []*Iface {
 	var iflist = make([]*Iface, 0)
-	for _, v := range ifs {
+	for i, v := range ifs {
 		// Figure out interface's IP
 		log.Printf("Getting ip of %s", v)
 		ip, err := getIfaceAddr(v)
@@ -113,7 +114,8 @@ func setupIfs(ifs []string) []*Iface {
 		debugf(1, "IP of %s is %s", v, ip)
 
 		// create socket bound to this if
-		fd, err := socks.CreateDeviceBoundUDPSocket(ip, uint16(TUNTUNTUN_CLIENT_PORT), v)
+		// put every socket on a different port to avoid conflicts
+		fd, err := socks.CreateDeviceBoundUDPSocket(ip, uint16(TUNTUNTUN_CLIENT_PORT+i), v)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -152,6 +154,7 @@ func registerBegin(iface *Iface, remote_addr *net.UDPAddr) error {
 	registration := []byte{TTT_REGISTER_BEGIN}
 	debug(1, "Beginning registration...")
 	_, err := iface.WriteToUDP(registration, remote_addr)
+	time.Sleep(100 * time.Millisecond)
 	// TODO: wait for registration acknownledgment
 	return err
 }
@@ -161,6 +164,7 @@ func registerClient(iface *Iface, remote_addr *net.UDPAddr) error {
 	log.Printf("Registering via fd %d", iface.FD)
 	b, err := iface.WriteToUDP(registration, remote_addr)
 	log.Printf("Sent out %d bytes for registration", b)
+	time.Sleep(100 * time.Millisecond)
 	// TODO: wait for registration acknownledgment
 	return err
 }

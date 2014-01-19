@@ -24,11 +24,10 @@ func listenUDP(conn UDPReadWrite, c chan UDPRecv) error {
 	listenerID++
 
 	colors := []string{"magenta", "yellow", "cyan", "white:blue", "black:white"}
-	ansi_colors := make([]string, len(colors))
-	for i, color := range colors {
-		ansi_colors[i] = ansi.ColorCode(color)
-	}
+	mycolor := ansi.ColorCode(colors[myID%len(colors)])
 	ansi_reset := ansi.ColorCode("reset")
+
+	debugf(1, "%sListening to %p...%s", mycolor, conn, ansi_reset)
 
 	read_buf := make([]byte, BUF_SIZE)
 	for {
@@ -37,13 +36,13 @@ func listenUDP(conn UDPReadWrite, c chan UDPRecv) error {
 			log.Print(err)
 			return err
 		}
+		debugf(3, "%sGot %d bytes from %s%s", mycolor, count, remote_addr, ansi_reset)
 		c <- UDPRecv{
 			Data:       read_buf[:count],
 			RemoteAddr: remote_addr,
 		}
-
 		if DEBUG_LEVEL >= 1 {
-			fmt.Print(ansi_colors[myID%len(ansi_colors)], "R", ansi_reset)
+			fmt.Print(mycolor, "R", ansi_reset)
 		}
 
 	}
