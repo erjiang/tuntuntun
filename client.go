@@ -29,9 +29,16 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 	// create list of local Ifs and store in global
 	ifs = setupIfs(local_ifs)
 
+	err = registerBegin(ifs[0], remote_addr)
+	if err != nil {
+		log.Fatal(err)
+	}
 	for _, iface := range ifs {
 		debugf(1, "Registering %s with server...", iface.IP.IP)
-		registerClient(iface, remote_addr)
+		err = registerClient(iface, remote_addr)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	debug(1, "Configuring device with ifconfig")
@@ -139,6 +146,14 @@ func setupIfs(ifs []string) []*Iface {
 		debug(1, fmt.Sprintf("Created link %s", v))
 	}
 	return iflist
+}
+
+func registerBegin(iface *Iface, remote_addr *net.UDPAddr) error {
+	registration := []byte{TTT_REGISTER_BEGIN}
+	debug(1, "Beginning registration...")
+	_, err := iface.WriteToUDP(registration, remote_addr)
+	// TODO: wait for registration acknownledgment
+	return err
 }
 
 func registerClient(iface *Iface, remote_addr *net.UDPAddr) error {

@@ -23,6 +23,7 @@ const TTT_DATA byte = 1
 const TTT_RESEND_REQ byte = 2
 const TTT_ACK byte = 3
 
+const TTT_REGISTER_BEGIN byte = 9 // clears existing registrations
 const TTT_REGISTER byte = 4
 const TTT_REGISTER_REQ byte = 5
 const TTT_REGISTER_ACK byte = 6

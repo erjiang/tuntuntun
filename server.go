@@ -7,11 +7,20 @@ import (
 	"tun"
 )
 
-var other_end *net.UDPAddr
+var other_ends []*net.UDPAddr
+
+func register_begin() {
+	other_ends = make([]*net.UDPAddr, 0)
+}
 
 func register_connection(ra *net.UDPAddr) {
+	if other_ends == nil {
+		other_ends = make([]*net.UDPAddr, 0)
+		log.Print("Registration without REGISTRATION_BEGIN")
+		return
+	}
 	log.Print("Got registration from ", ra)
-	other_end = ra
+	other_ends = append(other_ends, ra)
 }
 
 func server() {
@@ -56,9 +65,9 @@ func server() {
 				log.Fatal("Error reading from tun")
 			}
 			log.Printf("Got %d bytes from tundev", tlen)
-			if other_end != nil {
-				log.Printf("Sending %d bytes to %s", tlen, other_end)
-				forward_packet(conn, other_end, tun_read_buf[:tlen])
+			if other_ends != nil {
+				log.Printf("Sending %d bytes to %s", tlen, other_ends[int(packet_seq)%len(other_ends)])
+				forward_packet(conn, other_ends[int(packet_seq)%len(other_ends)], tun_read_buf[:tlen])
 			} else {
 				log.Print("Got data without registration")
 			}
@@ -83,6 +92,8 @@ func server() {
 				ReplaceIPHeaderChecksum(pkt)
 				*/
 				tundev.Write(pkt)
+			case TTT_REGISTER_BEGIN: // clear existing registrations
+				log.Print("Clearing registrations ...")
 			case TTT_REGISTER: // registration
 				log.Print("Received registration from ", remote_addr)
 				register_connection(remote_addr)
