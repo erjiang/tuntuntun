@@ -1,5 +1,5 @@
 
-tuntuntun: *.go src/tun/*
+tuntuntun: *.go src/tun/* src/socks/*
 	GOPATH=$(PWD) go build
 
 test:

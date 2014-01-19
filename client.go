@@ -6,6 +6,7 @@ import (
 	"github.com/mgutz/ansi"
 	"log"
 	"net"
+	"socks"
 	"tun"
 )
 
@@ -15,7 +16,7 @@ var send_buf []byte = make([]byte, BUF_SIZE)
 
 var ifs []*Iface
 
-func client(remote_addr *net.UDPAddr, local_ifs []*net.UDPAddr) {
+func client(remote_addr *net.UDPAddr, local_ifs []string) {
 	log.Print("Initializing tun device")
 	tundev, err := tun.Tun_alloc(tun.IFF_TUN | tun.IFF_NO_PI)
 	if err != nil {
@@ -30,8 +31,8 @@ func client(remote_addr *net.UDPAddr, local_ifs []*net.UDPAddr) {
 	ifs = setupIfs(local_ifs)
 
 	for _, iface := range ifs {
-		log.Printf("Registering %s with server...", iface.Conn.LocalAddr())
-		registerClient(iface.Conn, remote_addr)
+		log.Printf("Registering %s with server...", iface.IP.IP)
+		registerClient(iface, remote_addr)
 	}
 
 	log.Print("Configuring device with ifconfig")
@@ -88,20 +89,46 @@ func client(remote_addr *net.UDPAddr, local_ifs []*net.UDPAddr) {
 	}
 }
 
-func setupIfs(addrs []*net.UDPAddr) []*Iface {
+// gets a list of network interfaces (eth0, eth1, wlan0, ...)
+// and does the following:
+// 1. gets the (first) IP associated with that interface
+// 2. creates a unix socket bound to that interface
+// 3. creates a golang udp listener to listen on that address
+// 4. creates a tuntuntun Iface struct for that interface
+func setupIfs(ifs []string) []*Iface {
 	var iflist = make([]*Iface, 0)
-	for i, v := range addrs {
-		// try listening on if
-		debug(1, "Listening on ", v)
-		conn, err := net.ListenUDP("udp", v)
+	for _, v := range ifs {
+		// Figure out interface's IP
+		log.Printf("Getting ip of %s", v)
+		ip, err := getIfaceAddr(v)
 		if err != nil {
-			log.Print("Could not listen to ", v)
 			log.Fatal(err)
 		}
+		log.Printf("IP of %s is %s", v, ip)
+
+		// create socket bound to this if
+		fd, err := socks.CreateDeviceBoundUDPSocket(ip, uint16(TUNTUNTUN_CLIENT_PORT), v)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// try listening on this IP
+		udpaddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", ip, TUNTUNTUN_CLIENT_PORT))
+		if err != nil {
+			log.Fatal(err)
+		}
+		debug(1, "Listening on ", udpaddr)
+		conn, err := net.ListenUDP("udp", udpaddr)
+		if err != nil {
+			log.Print("Could not listen to ", udpaddr)
+			log.Fatal(err)
+		}
+
 		// create if struct and add to list
 		iflist = append(iflist, &Iface{
-			Name:   fmt.Sprintf("Link %d", i),
-			IP:     v,
+			Name:   v,
+			FD:     fd,
+			IP:     udpaddr,
 			Conn:   conn,
 			Status: IFACE_STATUS_UP,
 		})
@@ -110,14 +137,16 @@ func setupIfs(addrs []*net.UDPAddr) []*Iface {
 	return iflist
 }
 
-func registerClient(conn *net.UDPConn, remote_addr *net.UDPAddr) error {
+func registerClient(iface *Iface, remote_addr *net.UDPAddr) error {
 	registration := []byte{TTT_REGISTER}
-	_, err := conn.WriteToUDP(registration, remote_addr)
+	log.Printf("Registering via fd %d", iface.FD)
+	b, err := iface.WriteToUDP(registration, remote_addr)
+    log.Printf("Sent out %d bytes for registration", b)
 	// TODO: wait for registration acknownledgment
 	return err
 }
 
-func forward_packet(conn *net.UDPConn, remote_addr *net.UDPAddr, pkt []byte) error {
+func forward_packet(writer UDPWriter, remote_addr *net.UDPAddr, pkt []byte) error {
 
 	total_len := len(pkt) + ENVELOPE_LENGTH
 
@@ -134,7 +163,7 @@ func forward_packet(conn *net.UDPConn, remote_addr *net.UDPAddr, pkt []byte) err
 
 	copy(send_buf[5:], pkt)
 
-	_, err := conn.WriteToUDP(send_buf[:total_len], remote_addr)
+	_, err := writer.WriteToUDP(send_buf[:total_len], remote_addr)
 
 	if err != nil {
 		return err
@@ -159,7 +188,8 @@ func forwardPacketHandler(remote_addr *net.UDPAddr, fwdchan chan []byte) {
 
 		pkt := <-fwdchan
 
-		err := forward_packet(iface.Conn, remote_addr, pkt)
+		fmt.Printf("sending out conn %p", iface.IP)
+		err := forward_packet(iface, remote_addr, pkt)
 		if err != nil {
 			log.Print(err)
 		}

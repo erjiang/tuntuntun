@@ -1,7 +1,12 @@
 package main
 
 import (
+	"errors"
+	"fmt"
+	"log"
 	"net"
+	"socks"
+	"strings"
 	"time"
 )
 
@@ -28,6 +33,7 @@ type Iface struct {
 	Name         string
 	IP           *net.UDPAddr
 	Conn         *net.UDPConn
+	FD           int
 	Status       IfaceStatus
 	LastRTT      time.Duration
 	monitor      chan IfaceStatus
@@ -35,6 +41,11 @@ type Iface struct {
 	packets_recv uint64 // not currently working
 	bytes_sent   uint64
 	bytes_recv   uint64 // not currently working
+}
+
+func (iface *Iface) WriteToUDP(msg []byte, remote_addr *net.UDPAddr) (int, error) {
+    log.Printf("iface.WriteToUDP")
+	return socks.WriteToUDP(iface.FD, msg, remote_addr)
 }
 
 // function to repeatedly ping a host to monitor its response time
@@ -70,4 +81,27 @@ func monitorIface(conn *net.UDPConn, remote_addr *net.UDPAddr, acks chan uint32,
 
 func pingPacket(serial uint32) []byte {
 	return []byte{TTT_PING_REQ}
+}
+
+func getIfaceAddr(ifname string) (*net.IP, error) {
+	interf, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, err
+	}
+	addrs, err := interf.Addrs()
+	if err != nil {
+		return nil, err
+	}
+	if len(addrs) == 0 {
+		return nil, errors.New(fmt.Sprintf("Could not get IP for interface %s", ifname))
+	}
+	log.Printf("For %s, got addrs %+v", ifname, addrs)
+
+	// strip out the part after the slash in the addr
+	// for example: 192.168.0.1/24
+	ipstr := addrs[0].String()
+	slashindex := strings.Index(ipstr, "/")
+
+	ip := net.ParseIP(ipstr[:slashindex])
+	return &ip, nil
 }

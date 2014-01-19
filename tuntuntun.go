@@ -8,6 +8,10 @@ import (
 	"strconv"
 )
 
+type UDPWriter interface {
+	WriteToUDP([]byte, *net.UDPAddr) (int, error)
+}
+
 const TUNTUNTUN_CLIENT_PORT int = 70
 const TTT_CLIENT_IP string = "192.168.7.1"
 const TTT_SERVER_IP string = "192.168.7.2"
@@ -36,18 +40,11 @@ func main() {
 			return
 		}
 
-		var local_ifs = make([]*net.UDPAddr, len(os.Args[3:]))
-		for i, addr := range os.Args[3:] {
-			local_ifs[i], err = net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", addr, TUNTUNTUN_CLIENT_PORT))
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
 		remote_addr, err := net.ResolveUDPAddr("udp", os.Args[2])
 		if err != nil {
 			log.Fatal(err)
 		}
-		client(remote_addr, local_ifs)
+		client(remote_addr, os.Args[3:])
 	} else {
 		server()
 	}
