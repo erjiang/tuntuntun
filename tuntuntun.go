@@ -33,6 +33,7 @@ func main() {
 	env_debug, err := strconv.ParseInt(os.Getenv("DEBUG_LEVEL"), 10, 32)
 	if err == nil && env_debug > 0 {
 		DEBUG_LEVEL = int(env_debug)
+		log.Printf("Setting debug level to %d", DEBUG_LEVEL)
 	}
 
 	if os.Args[1] == "client" {

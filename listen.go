@@ -16,6 +16,13 @@ type UDPRecv struct {
 // the channel.
 // TODO: make this take an Iface so it can log statistics
 func listenUDP(conn UDPReadWrite, c chan UDPRecv) error {
+	colors := []string{"magenta", "yellow", "cyan", "white:blue", "black:white"}
+	ansi_colors := make([]string, len(colors))
+	for i, color := range colors {
+		ansi_colors[i] = ansi.ColorCode(color)
+	}
+	ansi_reset := ansi.ColorCode("reset")
+
 	read_buf := make([]byte, BUF_SIZE)
 	for {
 		log.Printf("Listening on conn %p", conn)
@@ -28,6 +35,11 @@ func listenUDP(conn UDPReadWrite, c chan UDPRecv) error {
 			Data:       read_buf[:count],
 			RemoteAddr: remote_addr,
 		}
+
+		if DEBUG_LEVEL >= 1 {
+			fmt.Print(ansi_colors[0], "R", ansi_reset)
+		}
+
 	}
 }
 

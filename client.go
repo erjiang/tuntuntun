@@ -17,25 +17,24 @@ var send_buf []byte = make([]byte, BUF_SIZE)
 var ifs []*Iface
 
 func client(remote_addr *net.UDPAddr, local_ifs []string) {
-	log.Print("Initializing tun device")
+	debug(2, "Initializing tun device")
 	tundev, err := tun.Tun_alloc(tun.IFF_TUN | tun.IFF_NO_PI)
 	if err != nil {
 		log.Print("Could not allocate tun device")
 		log.Fatal(err)
 	}
-	log.Print("Opened up tun device " + tundev.Name())
+	debug(0, "Opened up tun device "+tundev.Name())
 
-	log.Print("Initializing UDP connection to " + remote_addr.String())
-
+	debug(0, "Initializing UDP connection to "+remote_addr.String())
 	// create list of local Ifs and store in global
 	ifs = setupIfs(local_ifs)
 
 	for _, iface := range ifs {
-		log.Printf("Registering %s with server...", iface.IP.IP)
+		debugf(1, "Registering %s with server...", iface.IP.IP)
 		registerClient(iface, remote_addr)
 	}
 
-	log.Print("Configuring device with ifconfig")
+	debug(1, "Configuring device with ifconfig")
 	err = tun.Ifconfig(tundev.Name(), TTT_CLIENT_IP, TTT_SERVER_IP)
 	if err != nil {
 		log.Fatal(err)
@@ -44,7 +43,7 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 	log.Print("Ready ...")
 
 	tun_read_buf := make([]byte, BUF_SIZE)
-	udp_read_buf := make([]byte, BUF_SIZE)
+	//udp_read_buf := make([]byte, BUF_SIZE)
 
 	// set up listening channels for udp and tun
 	tunchan := make(chan int)
@@ -65,9 +64,9 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 			if !ok {
 				log.Fatal("Error reading from tun")
 			}
-			log.Printf("Got a packet of %d bytes for %s", count,
+			debugf(3, "Got a packet of %d bytes for %s", count,
 				get_ip_dest(tun_read_buf[:count]))
-			log.Printf("Sending to " + remote_addr.String())
+			debugf(3, "Sending to "+remote_addr.String())
 			// pass along packet
 			fwdchan <- tun_read_buf[:count]
 		case udpr, ok := <-udpchan:
@@ -76,14 +75,14 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 			}
 			envelope := udpr.Data
 			remote_addr := udpr.RemoteAddr
-			log.Printf("Got packet of len %d from %s", len(envelope), remote_addr)
-			switch udp_read_buf[0] {
+			debugf(3, "Got packet of len %d from %s", len(envelope), remote_addr)
+			switch envelope[0] {
 			case TTT_DATA: // packet to be forwarded
 				pkt := envelope[ENVELOPE_LENGTH:]
 				// pass along packet
 				tundev.Write(pkt)
 			default:
-				log.Print("Received packet of type ", envelope[0])
+				debug(1, "Received unhandled packet of type ", envelope[0])
 			}
 		}
 	}
@@ -104,7 +103,7 @@ func setupIfs(ifs []string) []*Iface {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("IP of %s is %s", v, ip)
+		debugf(1, "IP of %s is %s", v, ip)
 
 		// create socket bound to this if
 		fd, err := socks.CreateDeviceBoundUDPSocket(ip, uint16(TUNTUNTUN_CLIENT_PORT), v)
@@ -206,7 +205,7 @@ func forwardPacketHandler(remote_addr *net.UDPAddr, fwdchan chan []byte) {
 
 		// make colorful display of packets
 		// each iface gets a different color, and we print 'S' for sent and 'R' for received
-		if DEBUG_LEVEL >= 2 {
+		if DEBUG_LEVEL >= 1 {
 			fmt.Print(ansi_colors[int(packet_seq%uint64(len(ifs)))%len(colors)], "S", ansi_reset)
 		}
 

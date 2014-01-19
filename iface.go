@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"socks"
 	"strings"
@@ -48,7 +47,6 @@ func (iface *Iface) WriteToUDP(msg []byte, remote_addr *net.UDPAddr) (int, error
 }
 
 func (iface *Iface) ReadFromUDP(buf []byte) (int, *net.UDPAddr, error) {
-	log.Printf("iface.ReadFromUDP")
 	return socks.ReadFromUDP(iface.FD, buf)
 }
 
@@ -99,7 +97,7 @@ func getIfaceAddr(ifname string) (*net.IP, error) {
 	if len(addrs) == 0 {
 		return nil, errors.New(fmt.Sprintf("Could not get IP for interface %s", ifname))
 	}
-	log.Printf("For %s, got addrs %+v", ifname, addrs)
+	debugf(2, "For %s, got addrs %+v", ifname, addrs)
 
 	// strip out the part after the slash in the addr
 	// for example: 192.168.0.1/24
