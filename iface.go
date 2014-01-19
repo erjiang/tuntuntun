@@ -32,7 +32,6 @@ const (
 type Iface struct {
 	Name         string
 	IP           *net.UDPAddr
-	Conn         *net.UDPConn
 	FD           int
 	Status       IfaceStatus
 	LastRTT      time.Duration
@@ -41,11 +40,16 @@ type Iface struct {
 	packets_recv uint64 // not currently working
 	bytes_sent   uint64
 	bytes_recv   uint64 // not currently working
+	//Conn         *net.UDPConn
 }
 
 func (iface *Iface) WriteToUDP(msg []byte, remote_addr *net.UDPAddr) (int, error) {
-	log.Printf("iface.WriteToUDP")
 	return socks.WriteToUDP(iface.FD, msg, remote_addr)
+}
+
+func (iface *Iface) ReadFromUDP(buf []byte) (int, *net.UDPAddr, error) {
+	log.Printf("iface.ReadFromUDP")
+	return socks.ReadFromUDP(iface.FD, buf)
 }
 
 // function to repeatedly ping a host to monitor its response time

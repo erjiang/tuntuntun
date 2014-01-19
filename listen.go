@@ -15,9 +15,10 @@ type UDPRecv struct {
 // when it receives a packet. It passes the slice and the source address into
 // the channel.
 // TODO: make this take an Iface so it can log statistics
-func listenUDP(conn *net.UDPConn, c chan UDPRecv) error {
+func listenUDP(conn UDPReadWrite, c chan UDPRecv) error {
 	read_buf := make([]byte, BUF_SIZE)
 	for {
+		log.Printf("Listening on conn %p", conn)
 		count, remote_addr, err := conn.ReadFromUDP(read_buf)
 		if err != nil {
 			log.Print(err)

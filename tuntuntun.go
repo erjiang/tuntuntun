@@ -8,8 +8,9 @@ import (
 	"strconv"
 )
 
-type UDPWriter interface {
+type UDPReadWrite interface {
 	WriteToUDP([]byte, *net.UDPAddr) (int, error)
+	ReadFromUDP([]byte) (int, *net.UDPAddr, error)
 }
 
 const TUNTUNTUN_CLIENT_PORT int = 70

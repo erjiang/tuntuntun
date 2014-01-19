@@ -53,7 +53,7 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 
 	go listenTun(tundev, tun_read_buf, tunchan)
 	for _, iface := range ifs {
-		go listenUDP(iface.Conn, udpchan)
+		go listenUDP(iface, udpchan)
 	}
 	// put packet forwarding in a separate goroutine to be able to do
 	// round-robin load-balancing and more
@@ -113,6 +113,7 @@ func setupIfs(ifs []string) []*Iface {
 		}
 
 		// try listening on this IP
+		/* deprecated, listening on unix sockets now
 		udpaddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", ip, TUNTUNTUN_CLIENT_PORT))
 		if err != nil {
 			log.Fatal(err)
@@ -123,14 +124,18 @@ func setupIfs(ifs []string) []*Iface {
 			log.Print("Could not listen to ", udpaddr)
 			log.Fatal(err)
 		}
+		*/
 
 		// create if struct and add to list
 		iflist = append(iflist, &Iface{
-			Name:   v,
-			FD:     fd,
-			IP:     udpaddr,
-			Conn:   conn,
+			Name: v,
+			FD:   fd,
+			IP: &net.UDPAddr{
+				IP:   *ip,
+				Port: TUNTUNTUN_CLIENT_PORT,
+			},
 			Status: IFACE_STATUS_UP,
+			//Conn:   conn,
 		})
 		debug(1, fmt.Sprintf("Created link %s", v))
 	}
@@ -146,7 +151,7 @@ func registerClient(iface *Iface, remote_addr *net.UDPAddr) error {
 	return err
 }
 
-func forward_packet(writer UDPWriter, remote_addr *net.UDPAddr, pkt []byte) error {
+func forward_packet(writer UDPReadWrite, remote_addr *net.UDPAddr, pkt []byte) error {
 
 	total_len := len(pkt) + ENVELOPE_LENGTH
 
@@ -188,7 +193,7 @@ func forwardPacketHandler(remote_addr *net.UDPAddr, fwdchan chan []byte) {
 
 		pkt := <-fwdchan
 
-		fmt.Printf("sending out conn %p", iface.IP)
+		//fmt.Printf("sending out conn %p", iface.IP)
 		err := forward_packet(iface, remote_addr, pkt)
 		if err != nil {
 			log.Print(err)

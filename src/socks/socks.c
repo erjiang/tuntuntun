@@ -24,13 +24,11 @@ int createDeviceBoundUDPSocket(uint32_t sip, uint16_t sport, const char* bind_de
    my_ip_addr.sin_addr.s_addr = htonl(sip);
    my_ip_addr.sin_port = htons(sport);
    
-   /*
    result = bind(s, (struct sockaddr*)(&my_ip_addr), sizeof(my_ip_addr));
    if (result < 0) {
       perror("Error in bind");
       return result;
    }
-   */
    
    if (bind_dev) {
       // Bind to specific device.
@@ -45,13 +43,25 @@ int createDeviceBoundUDPSocket(uint32_t sip, uint16_t sport, const char* bind_de
 }
 
 ssize_t writeToUDP(int fd, void *buf, size_t buflen, uint32_t dip, uint16_t dport) {
-    putchar('X');
     struct sockaddr_in sa;
-    struct in_addr ipa;
     sa.sin_addr.s_addr = htonl(dip);
     sa.sin_family = AF_INET;
     sa.sin_port = htons(dport);
 
-    printf("Sending out %d bytes on fd %d to %x:%d", buflen, fd, dip, dport);
     return sendto(fd, buf, buflen, 0, &sa, sizeof(sa));
+}
+
+ssize_t recvFromUDP(int fd, void *buf, size_t buflen, uint32_t *from_ip_buf, uint16_t *from_port_buf) {
+    // IPv6 support needs sockaddr_storage to then cast to in or in6
+    struct sockaddr_in sa;
+
+
+    ssize_t res = recvfrom(fd, buf, buflen, 0, &sa, sizeof(sa));
+    int * crash = NULL; if (res < 0) { *crash = 1; } // force crash
+
+    // pass in src ip and port out of band
+    *from_ip_buf = ntohl(sa.sin_addr.s_addr);
+    *from_port_buf = ntohs(sa.sin_port);
+
+    return res;
 }
