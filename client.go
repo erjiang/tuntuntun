@@ -202,7 +202,7 @@ func forwardPacketHandler(remote_addr *net.UDPAddr, fwdchan chan []byte) {
 		// make colorful display of packets
 		// each iface gets a different color, and we print 'S' for sent and 'R' for received
 		if DEBUG_LEVEL >= 2 {
-			fmt.Print(ansi_colors[int(packet_seq%uint64(len(ifs)))%len(colors)], 'S', ansi_reset)
+			fmt.Print(ansi_colors[int(packet_seq%uint64(len(ifs)))%len(colors)], "S", ansi_reset)
 		}
 
 		if err != nil {
