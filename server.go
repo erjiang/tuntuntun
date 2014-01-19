@@ -12,6 +12,9 @@ var other_end *net.UDPAddr
 func register_connection(ra *net.UDPAddr) {
 	log.Print("Got registration from ", ra)
 	other_end = ra
+	// since the data comes from a random port, we need to
+	// make sure we send back to the listening port
+	other_end.Port = TUNTUNTUN_CLIENT_PORT
 }
 
 func server() {

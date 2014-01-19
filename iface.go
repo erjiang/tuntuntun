@@ -44,7 +44,7 @@ type Iface struct {
 }
 
 func (iface *Iface) WriteToUDP(msg []byte, remote_addr *net.UDPAddr) (int, error) {
-    log.Printf("iface.WriteToUDP")
+	log.Printf("iface.WriteToUDP")
 	return socks.WriteToUDP(iface.FD, msg, remote_addr)
 }
 
