@@ -24,11 +24,13 @@ int createDeviceBoundUDPSocket(uint32_t sip, uint16_t sport, const char* bind_de
    my_ip_addr.sin_addr.s_addr = htonl(sip);
    my_ip_addr.sin_port = htons(sport);
    
+   /*
    result = bind(s, (struct sockaddr*)(&my_ip_addr), sizeof(my_ip_addr));
    if (result < 0) {
       perror("Error in bind");
       return result;
    }
+   */
    
    if (bind_dev) {
       // Bind to specific device.
