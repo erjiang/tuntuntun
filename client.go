@@ -164,7 +164,7 @@ func registerClient(iface *Iface, remote_addr *net.UDPAddr) error {
 	log.Printf("Registering via fd %d", iface.FD)
 	b, err := iface.WriteToUDP(registration, remote_addr)
 	log.Printf("Sent out %d bytes for registration", b)
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(400 * time.Millisecond)
 	// TODO: wait for registration acknownledgment
 	return err
 }
