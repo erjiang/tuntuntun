@@ -178,9 +178,9 @@ func forward_packet(writer UDPReadWrite, remote_addr *net.UDPAddr, pkt []byte) e
 	}
 
 	send_buf[0] = ENV_DATA
-	send_buf[1] = byte(packet_seq >> 3)
-	send_buf[2] = byte(packet_seq >> 2)
-	send_buf[3] = byte(packet_seq >> 1)
+	send_buf[1] = byte(packet_seq >> 24)
+	send_buf[2] = byte(packet_seq >> 16)
+	send_buf[3] = byte(packet_seq >> 8)
 	send_buf[4] = byte(packet_seq >> 0)
 	packet_seq++
 
