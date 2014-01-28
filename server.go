@@ -47,27 +47,23 @@ func server() {
 		log.Fatal(err)
 	}
 
-	// TODO: put the buffer in the listenTun goroutine
-	tun_read_buf := make([]byte, BUF_SIZE)
-
 	// set up listening channels for udp and tun
-	tunchan := make(chan int)
+	tunchan := make(chan []byte)
 	udpchan := make(chan UDPRecv)
 
-	go listenTun(tundev, tun_read_buf, tunchan)
+	go listenTun(tundev, tunchan)
 	go listenUDP(conn, udpchan)
 
 	for {
 		select {
-		// listenTun sends the count of bytes
-		case tlen, ok := <-tunchan:
+		case tun_pkt, ok := <-tunchan:
 			if !ok {
 				log.Fatal("Error reading from tun")
 			}
-			log.Printf("Got %d bytes from tundev", tlen)
+			log.Printf("Got %d bytes from tundev", len(tun_pkt))
 			if other_ends != nil {
-				log.Printf("Sending %d bytes to %s", tlen, other_ends[int(packet_seq)%len(other_ends)])
-				forward_packet(conn, other_ends[int(packet_seq)%len(other_ends)], tun_read_buf[:tlen])
+				log.Printf("Sending %d bytes to %s", len(tun_pkt), other_ends[int(packet_seq)%len(other_ends)])
+				forward_packet(conn, other_ends[int(packet_seq)%len(other_ends)], tun_pkt)
 			} else {
 				log.Print("Got data without registration")
 			}

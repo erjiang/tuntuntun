@@ -61,13 +61,20 @@ func listenUDP(conn UDPReadWrite, c chan UDPRecv) error {
 	}
 }
 
-func listenTun(tundev *os.File, read_buf []byte, c chan int) error {
+func listenTun(tundev *os.File, c chan []byte) error {
+	read_buf := make([]byte, BUF_SIZE)
+	read_buf2 := make([]byte, BUF_SIZE)
+	curr_buf := &read_buf
+	other_buf := &read_buf2
 	for {
-		count, err := tundev.Read(read_buf)
+		count, err := tundev.Read(*curr_buf)
 		if err != nil {
 			log.Print(err)
 			return err
 		}
-		c <- count
+		c <- (*curr_buf)[:count]
+		temp_swp := curr_buf
+		curr_buf = other_buf
+		other_buf = temp_swp
 	}
 }

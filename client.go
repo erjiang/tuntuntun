@@ -50,15 +50,12 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 
 	log.Print("Ready ...")
 
-	tun_read_buf := make([]byte, BUF_SIZE)
-	//udp_read_buf := make([]byte, BUF_SIZE)
-
 	// set up listening channels for udp and tun
-	tunchan := make(chan int)
+	tunchan := make(chan []byte)
 	udpchan := make(chan UDPRecv)
 	fwdchan := make(chan []byte)
 
-	go listenTun(tundev, tun_read_buf, tunchan)
+	go listenTun(tundev, tunchan)
 	for _, iface := range ifs {
 		go listenUDP(iface, udpchan)
 	}
@@ -68,15 +65,16 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 
 	for {
 		select {
-		case count, ok := <-tunchan:
+		case tun_pkt, ok := <-tunchan:
 			if !ok {
 				log.Fatal("Error reading from tun")
 			}
-			debugf(3, "Got a packet of %d bytes for %s", count,
-				get_ip_dest(tun_read_buf[:count]))
+			debugf(3, "Got a packet of %d bytes for %s", len(tun_pkt),
+				get_ip_dest(tun_pkt))
 			debugf(3, "Sending to "+remote_addr.String())
 			// pass along packet
-			fwdchan <- tun_read_buf[:count]
+			// TODO: use another buffer to prevent clobbering things
+			fwdchan <- tun_pkt
 		case udpr, ok := <-udpchan:
 			if !ok {
 				log.Fatal("Error reading from udp")
