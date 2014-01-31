@@ -50,8 +50,6 @@ func ReadFromUDP(fd int, buf []byte) (int, *net.UDPAddr, error) {
         return int(res), nil, errors.New(fmt.Sprintf("Got errno %d from recvfrom", errno))
     }
 
-    fmt.Printf("Got something from fd %d", fd)
-
     addr := &net.UDPAddr{
         IP: []byte{
             byte(ip_buf >> 24),
