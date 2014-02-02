@@ -6,6 +6,7 @@ import (
 	"github.com/mgutz/ansi"
 	"log"
 	"net"
+	"os"
 	"socks"
 	"time"
 	"tun"
@@ -110,6 +111,9 @@ func setupIfs(ifs []string) []*Iface {
 			log.Fatal(err)
 		}
 		debugf(1, "IP of %s is %s", v, ip)
+
+		debug(1, "Disabling reverse path filtering on ", v)
+		disableRPFilter(v)
 
 		// create socket bound to this if
 		// put every socket on a different port to avoid conflicts
@@ -230,4 +234,19 @@ func forwardPacketHandler(remote_addr *net.UDPAddr, fwdchan chan []byte) {
 			log.Print(err)
 		}
 	}
+}
+
+// disables reverse-path filtering for the given device (or "all")
+func disableRPFilter(device string) error {
+	f, err := os.Open("/proc/sys/net/ipv4/conf/" + device + "/rp_filter")
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write([]byte{'0'})
+	if err != nil {
+		return err
+	}
+
+	return f.Close()
 }
