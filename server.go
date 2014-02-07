@@ -14,11 +14,6 @@ func register_begin() {
 }
 
 func register_connection(ra *net.UDPAddr) {
-	if other_ends == nil {
-		other_ends = make([]*net.UDPAddr, 0)
-		log.Print("Registration without REGISTRATION_BEGIN")
-		return
-	}
 	log.Print("Got registration from ", ra)
 	other_ends = append(other_ends, ra)
 }
@@ -94,6 +89,11 @@ func server() {
 				*/
 				tundev.Write(pkt)
 			case TTT_REGISTER_BEGIN: // clear existing registrations
+				register_begin()
+				_, err = conn.WriteToUDP([]byte{TTT_REGISTER_BEGIN}, remote_addr)
+				if err != nil {
+					log.Print(err)
+				}
 				log.Print("Clearing registrations ...")
 			case TTT_REGISTER: // registration
 				log.Print("Received registration from ", remote_addr)

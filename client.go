@@ -35,6 +35,7 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 	// create list of local Ifs and store in global
 	ifs = setupIfs(local_ifs)
 
+	debug(0, "Sending handshake to server...")
 	err = registerBegin(ifs[0], remote_addr)
 	if err != nil {
 		log.Fatal(err)
@@ -160,7 +161,43 @@ func registerBegin(iface *Iface, remote_addr *net.UDPAddr) error {
 	registration := []byte{TTT_REGISTER_BEGIN}
 	debug(1, "Beginning registration...")
 	_, err := iface.WriteToUDP(registration, remote_addr)
-	time.Sleep(100 * time.Millisecond)
+	if err != nil {
+		log.Fatal("Could not send registration: ", err)
+	}
+
+	ack_chan := make(chan bool) // alert us if we get an ack from the server
+
+	// keep reading until we get a REGISTER_BEGIN ack from server
+	go func() {
+		read_buf := make([]byte, 100) // buffer to receive ack
+		for {
+			count, _, err := iface.ReadFromUDP(read_buf)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if count > 0 && read_buf[0] == TTT_REGISTER_BEGIN {
+				ack_chan <- true
+				break
+			}
+		}
+	}()
+
+	// retry registration every 2 seconds
+WAIT:
+	for {
+		select {
+		case did_ack := <-ack_chan:
+			if did_ack {
+				break WAIT
+			}
+		case <-time.After(2 * time.Second):
+			debug(0, "Resending registration...")
+			_, err = iface.WriteToUDP(registration, remote_addr)
+			if err != nil {
+				log.Fatal("Could not send registration: ", err)
+			}
+		}
+	}
 	// TODO: wait for registration acknownledgment
 	return err
 }
