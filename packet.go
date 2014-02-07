@@ -33,6 +33,9 @@ const TTT_PING_ACK byte = 8
 
 const ENVELOPE_LENGTH int = 5 // 5 byte envelope
 
+// ip header + udp header + tuntuntun header
+const TUNNEL_OVERHEAD int = ENVELOPE_LENGTH + 20 + 8
+
 func replace_sender_ip(pkt []byte, new_ip net.IP) []byte {
 	pkt[0] = new_ip[0]
 	pkt[1] = new_ip[1]

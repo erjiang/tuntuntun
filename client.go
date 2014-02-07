@@ -25,6 +25,10 @@ func client(remote_addr *net.UDPAddr, local_ifs []string) {
 		log.Print("Could not allocate tun device")
 		log.Fatal(err)
 	}
+	err = tun.SetMTU(tundev.Name(), 1500-TUNNEL_OVERHEAD)
+	if err != nil {
+		log.Print("Could not set MTU: ", err)
+	}
 	debug(0, "Opened up tun device "+tundev.Name())
 
 	debug(0, "Initializing interfaces...")

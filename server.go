@@ -33,6 +33,11 @@ func server() {
 		log.Print("Could not allocate tun device")
 		log.Fatal(err)
 	}
+	// assume that normal MTU is 1500
+	err = tun.SetMTU(tundev.Name(), 1500-TUNNEL_OVERHEAD)
+	if err != nil {
+		log.Print("Could not set MTU: ", err)
+	}
 	log.Print("Opened up tun device " + tundev.Name())
 
 	log.Print("Configuring device with ifconfig")
