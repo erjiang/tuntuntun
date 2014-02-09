@@ -23,15 +23,25 @@ Milestones
 
 1. *(done)* Convince Go to open a tun device and read from it.
 2. *(done)* Be able to proxy packets on the local machine by rewriting sender IP.
-3. Auto-configure routing to route all network traffic through the tun device.
-4. Handle retransmission, ordering, etc. (Effectively reimplementing TCP.)
-5. *(done)* Load-balance connection across multiple physical connections.
+3. Add basic security features.
+4. Auto-configure routing to route all network traffic through the tun device.
+5. Handle retransmission, ordering, etc. (Effectively reimplementing TCP.)
+6. *(done)* Load-balance connection across multiple physical connections.
+7. Basic automatic failover strategy.
+8. Configurable load-balancing and failover strategies.
 
 
 Questions and Answers
 ---------------------
 
-1. Q: Why not just use OpenVPN + ifenslave to bond two interfaces?
+Q: Does this offer me any security?
+
+A: No, it offers you no real security. If you want security, you can use a
+"real" VPN (like OpenVPN) in conjunction with tuntuntun. In fact, the current
+implementation is so insecure that you shouldn't run it on an
+Internet-connected machine.
+
+Q: Why not just use OpenVPN + ifenslave to bond two interfaces?
 
 A: Putting more of the load-balancing logic into this software makes it easier
 to experiment with different load-balancing and/or failover strategies. For
@@ -39,7 +49,7 @@ example, you can modify the code to send 75% of packets over one link, and the
 rest on another link, or do instant failover when one link's latency exceeds a
 certain threshold.
 
-2. Q: How does this compare to programs that don't require a proxy server?
+Q: How does this compare to programs that don't require a proxy server?
 
 A: Many connection-sharing/load-balancing programs operate by assigning
 different connections to different links. For example, if you are downloading
