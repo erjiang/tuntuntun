@@ -247,10 +247,20 @@ func forwardPacketHandler(remote_addr *net.UDPAddr, fwdchan chan []byte) {
 	}
 	ansi_reset := ansi.ColorCode("reset")
 
+	skip_ifaces := 0 // offset to packet_seq, used for skipping down ifaces
+
 	for {
 
 		// round-robin by using packet sequence
-		iface := ifs[packet_seq%uint64(len(ifs))]
+		iface := ifs[packet_seq%uint64(len(ifs)+skip_ifaces)]
+
+		// skip this iface if it's status is DOWN or CONGESTED only if
+		// there are other working ifaces to use
+		for iface.Status != IFACE_STATUS_UP && upIfaces(ifs) > 0 {
+			debug(2, "Skipping iface ", iface.Name)
+			skip_ifaces++
+			iface = ifs[packet_seq%uint64(len(ifs)+skip_ifaces)]
+		}
 
 		pkt := <-fwdchan
 

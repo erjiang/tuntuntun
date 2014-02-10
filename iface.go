@@ -107,3 +107,13 @@ func getIfaceAddr(ifname string) (*net.IP, error) {
 	ip := net.ParseIP(ipstr[:slashindex])
 	return &ip, nil
 }
+
+func upIfaces(ifs []*Iface) int {
+	up := 0
+	for _, v := range ifs {
+		if v.Status == IFACE_STATUS_UP {
+			up++
+		}
+	}
+	return up
+}
